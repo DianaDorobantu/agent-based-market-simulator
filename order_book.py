@@ -106,6 +106,23 @@ class OrderBook:
 
         while self.buy_prices and self.sell_prices:
 
+            # Clean stale buy prices
+            while self.buy_prices:
+                best_bid = -self.buy_prices[0]
+                if best_bid in self.buy_levels and self.buy_levels[best_bid]:
+                    break
+                heapq.heappop(self.buy_prices)
+
+            # Clean stale sell prices
+            while self.sell_prices:
+                best_ask = self.sell_prices[0]
+                if best_ask in self.sell_levels and self.sell_levels[best_ask]:
+                    break
+                heapq.heappop(self.sell_prices)
+
+            if not self.buy_prices or not self.sell_prices:
+                break
+
             best_bid = -self.buy_prices[0]
             best_ask = self.sell_prices[0]
 
@@ -119,7 +136,7 @@ class OrderBook:
             trade_price = best_ask
 
             trade = {
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.utcnow(),
                 "buy_agent": buy_order.agent_id,
                 "sell_agent": sell_order.agent_id,
                 "price": trade_price,
@@ -137,34 +154,7 @@ class OrderBook:
             if buy_order.quantity == 0:
                 self.buy_levels[best_bid].pop(0)
                 del self.active_orders[buy_order.id]
-                if not self.buy_levels[best_bid]:
-                    heapq.heappop(self.buy_prices)
-                    del self.buy_levels[best_bid]
 
             if sell_order.quantity == 0:
                 self.sell_levels[best_ask].pop(0)
                 del self.active_orders[sell_order.id]
-                if not self.sell_levels[best_ask]:
-                    heapq.heappop(self.sell_prices)
-                    del self.sell_levels[best_ask]
-
-
-
-    def get_l3_snapshot(self):
-
-        return {
-            "buy": {
-                price: [
-                    {"id": o.id, "agent": o.agent_id, "qty": o.quantity}
-                    for o in orders
-                ]
-                for price, orders in self.buy_levels.items()
-            },
-            "sell": {
-                price: [
-                    {"id": o.id, "agent": o.agent_id, "qty": o.quantity}
-                    for o in orders
-                ]
-                for price, orders in self.sell_levels.items()
-            },
-        }
