@@ -136,7 +136,7 @@ class OrderBook:
             trade_price = best_ask
 
             trade = {
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(timezone.utc),
                 "buy_agent": buy_order.agent_id,
                 "sell_agent": sell_order.agent_id,
                 "price": trade_price,
